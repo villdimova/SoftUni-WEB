@@ -38,15 +38,18 @@ namespace HttpClientDemo
                     Encoding.UTF8.GetString(buffer, 0, lenght);
                 Console.WriteLine(requestString);
 
+              
+
                 string html = $"<h1>Hello from VillServer {DateTime.Now}</h1>" +
                     $"<form action=/tweet method=post><input name=username /><input name=password />" +
-                    $"<input type=submit /></form>";
+                    $"<input type=submit /></form>"+DateTime.Now;
 
                 string response = "HTTP/1.1 200 OK" + NewLine +
                     "Server: VillServer 2021" + NewLine +
                     // "Location: https://www.google.com" + NewLine +
                     "Content-Type: text/html; charset=utf-8" + NewLine +
-                    // "Content-Disposition: attachment; filename=vill.txt" + NewLine +
+                  "X-Server-Version: 1.0"+ NewLine+
+                  "Set-Cookie: sid=1215445gfgdfsdfdfgh; Path=/; Expires= "+DateTime.UtcNow.AddHours(1).ToString("R")+NewLine+
                     "Content-Lenght: " + html.Length + NewLine +
                     NewLine +
                     html + NewLine;
