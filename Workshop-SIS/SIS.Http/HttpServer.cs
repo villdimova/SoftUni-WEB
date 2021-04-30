@@ -13,20 +13,14 @@ namespace SIS.Http
 {
     public class HttpServer : IHttpServer
     {
-       
-        IDictionary<string, Func<HttpRequest, HttpResponse>> routTable = new Dictionary<string, Func<HttpRequest, HttpResponse>>();
-        public void AddRoute(string path, Func<HttpRequest, HttpResponse> action)
+
+       List<Route> routeTable ;
+
+        public HttpServer(List<Route> routeTable)
         {
-            if (routTable.ContainsKey(path))
-            {
-                routTable[path] = action;
-            }
-            else
-            {
-                routTable.Add(path, action);
-            }
-            
+            this.routeTable = routeTable;
         }
+       
 
         public async Task StartAsync(int port)
         {
@@ -80,10 +74,11 @@ namespace SIS.Http
                     Console.WriteLine($"{ request.Method} { request.Path} => {request.Headers.Count} headers");
 
                     HttpResponse response;
-                    if (this.routTable.ContainsKey(request.Path))
+                    var route = routeTable.FirstOrDefault(x => x.Path == request.Path);
+                    if (route!=null)
                     {
-                        var action = this.routTable[request.Path];
-                        response = action(request);
+                        
+                        response = route.Action(request);
                     }
                     else
                     {
