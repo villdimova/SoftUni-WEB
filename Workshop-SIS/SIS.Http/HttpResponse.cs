@@ -7,6 +7,13 @@ namespace SIS.Http
     public class HttpResponse
     {
 
+        public HttpResponse(HttpStatusCode statusCode)
+        {
+            this.StatusCode = statusCode;
+            this.Headers = new List<Header>();
+            this.Cookies = new List<Cookie>();
+        }
+
         public HttpResponse(string contentType, byte[] body, HttpStatusCode statusCode=HttpStatusCode.Ok)
         {
             if (body==null)
@@ -23,7 +30,7 @@ namespace SIS.Http
                 { new Header("Content-Length", body.Length.ToString()) }
              };
 
-            this.Cookies = new List<ResponseCookie>();
+            this.Cookies = new List<Cookie>();
 
         }
 
@@ -55,7 +62,7 @@ namespace SIS.Http
 
         public ICollection<Header> Headers { get; set; }
 
-        public ICollection<ResponseCookie> Cookies { get; set; }
+        public ICollection<Cookie> Cookies { get; set; }
 
         public byte[] Body { get; set; }
 
