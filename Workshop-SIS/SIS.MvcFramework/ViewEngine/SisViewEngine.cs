@@ -7,62 +7,113 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace SIS.MvcFramework.ViewEngine
 {
-    public class SisViewEngine : IViewEngine
+    public class SISViewEngine : IViewEngine
     {
-        public string GetHtml(string templateCode, object viewModel)
+        public string GetHtml(string templateCode, object viewModel,string user)
         {
-            string cshapCode = GenerateCsharpfromTemplatr(templateCode);
-            IView executableObject = GenerateExecutableCode(cshapCode, viewModel);
-             string html= executableObject.ExecuteTemplate(viewModel);
+            string csharpCode = GenerateCSharpFromTemplate(templateCode, viewModel);
+            IView executableObject = GenerateExecutableCоde(csharpCode, viewModel);
+            string html = executableObject.ExecuteTemplate(viewModel, user);
             return html;
-        }
-
-        private string GenerateCsharpfromTemplatr(string templateCode)
-        {
-            var methodBody = GetMethodBody(templateCode);
-            string csharpCode = @"
-             using System;
-             using System.Text;
-            using System.Linq;
-            using System.Collections.Generic;
             
-            namespace Viewnamespace
-            {
-                public class ViewClass : IView
-                    {
-                        public string ExecuteTemplate(object viewModel)
-                            {   var html= new StringBuilder();
-
-                                " + methodBody + @"
-                                return html.ToString();
-                             }
-
-        private string GetMethodBody(string templateCode)
-        {
-            throw new NotImplementedException();
         }
-    }
+
+        private string GenerateCSharpFromTemplate(string templateCode,object viewModel)
+        {
+            string typeOfModel = "object";
+            if (viewModel != null)
+            {
+                if (viewModel.GetType().IsGenericType)
+                {
+                    var modelName = viewModel.GetType().FullName;
+                    var genericArguments = viewModel.GetType().GenericTypeArguments;
+                    typeOfModel = modelName.Substring(0, modelName.IndexOf('`'))
+                        + "<" + string.Join(",", genericArguments.Select(x => x.FullName)) + ">";
+                }
+                else
+                {
+                    typeOfModel = viewModel.GetType().FullName;
+                }
             }
 
+            string csharpCode = @"
+using System;
+using System.Text;
+using System.Linq;
+using System.Collections.Generic;
+using SIS.MvcFramework.ViewEngine;
+namespace ViewNamespace
+{
+    public class ViewClass : IView
+    {
+        public string ExecuteTemplate(object viewModel, string user)
+        {
+            var User = user;
+            var Model = viewModel as " + typeOfModel + @";
+            var html = new StringBuilder();
+            " + GetMethodBody(templateCode) + @"
+            return html.ToString();
+        }
+    }
+}
 ";
             return csharpCode;
         }
 
+
         private string GetMethodBody(string templateCode)
         {
-            throw new NotImplementedException();
+            Regex csharpCodeRegex = new Regex(@"[^\""\s&\'\<]+");
+            var supportedOperators = new List<string> { "for", "while", "if", "else", "foreach" };
+            StringBuilder csharpCode = new StringBuilder();
+            StringReader sr = new StringReader(templateCode);
+            string line;
+            while ((line = sr.ReadLine()) != null)
+            {
+                if (supportedOperators.Any(x => line.TrimStart().StartsWith("@" + x)))
+                {
+                    var atSignLocation = line.IndexOf("@");
+                    line = line.Remove(atSignLocation, 1);
+                    csharpCode.AppendLine(line);
+                }
+                else if (line.TrimStart().StartsWith("{") ||
+                    line.TrimStart().StartsWith("}"))
+                {
+                    csharpCode.AppendLine(line);
+                }
+                else
+                {
+                    csharpCode.Append($"html.AppendLine(@\"");
+
+                    while (line.Contains("@"))
+                    {
+                        var atSignLocation = line.IndexOf("@");
+                        var htmlBeforeAtSign = line.Substring(0, atSignLocation);
+                        csharpCode.Append(htmlBeforeAtSign.Replace("\"", "\"\"") + "\" + ");
+                        var lineAfterAtSign = line.Substring(atSignLocation + 1);
+                        var code = csharpCodeRegex.Match(lineAfterAtSign).Value;
+                        csharpCode.Append(code + " + @\"");
+                        line = lineAfterAtSign.Substring(code.Length);
+                    }
+
+                    csharpCode.AppendLine(line.Replace("\"", "\"\"") + "\");");
+                }
+            }
+
+            return csharpCode.ToString();
         }
 
-        private IView GenerateExecutableCode(string csharpCode, object viewModel)
+        private IView GenerateExecutableCоde(string csharpCode, object viewModel)
         {
             var compileResult = CSharpCompilation.Create("ViewAssembly")
-                 .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
-                 .AddReferences(MetadataReference.CreateFromFile(typeof(object).Assembly.Location))
-                 .AddReferences(MetadataReference.CreateFromFile(typeof(IView).Assembly.Location));
+                .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+                .AddReferences(MetadataReference.CreateFromFile(typeof(object).Assembly.Location))
+                .AddReferences(MetadataReference.CreateFromFile(typeof(IView).Assembly.Location));
             if (viewModel != null)
             {
                 if (viewModel.GetType().IsGenericType)
@@ -116,7 +167,5 @@ namespace SIS.MvcFramework.ViewEngine
                 }
             }
         }
-
-
     }
 }
