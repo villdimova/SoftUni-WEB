@@ -1,4 +1,5 @@
 ﻿using SIS.Http;
+using SIS.MvcFramework.ViewEngine;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -7,11 +8,18 @@ namespace SIS.MvcFramework
 {
    public abstract class Controller
     {
+        private SISViewEngine viewEngine;
 
-        public HttpResponse View([CallerMemberName]string viewPath=null)
+        public Controller()
+        {
+            this.viewEngine = new SISViewEngine();
+        }
+
+        public HttpResponse View(object viewModel=null,[CallerMemberName]string viewPath=null)
         {
             var layout = System.IO.File.ReadAllText("Views/Shared/_Layout.cshtml");
-
+            layout = layout.Replace("@RenderBody()", "__VIEW____GOES___HERE__");
+            layout = this.viewEngine.GetHtml(layout, viewModel,null);
             var viewContent = System.IO.File.ReadAllText(
                 "Views/" + 
                 this.GetType().Name.Replace("Controller",string.Empty)+ 
@@ -19,7 +27,8 @@ namespace SIS.MvcFramework
                 viewPath +
                 ".cshtml");
 
-            var responseHtml = layout.Replace(" @RenderBody()",viewContent);
+            viewContent = this.viewEngine.GetHtml(viewContent, viewModel, null);
+            var responseHtml = layout.Replace("__VIEW____GOES___HERE__", viewContent);
             var responseBodyBytes = Encoding.UTF8.GetBytes(responseHtml);
             var response = new HttpResponse("text/html", responseBodyBytes);
             return response;
