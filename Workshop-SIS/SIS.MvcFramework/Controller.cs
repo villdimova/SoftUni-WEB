@@ -8,6 +8,7 @@ namespace SIS.MvcFramework
 {
    public abstract class Controller
     {
+        private const string UserIdSessionName = "UserId";
         private SISViewEngine viewEngine;
 
         public Controller()
@@ -15,27 +16,24 @@ namespace SIS.MvcFramework
             this.viewEngine = new SISViewEngine();
         }
 
-        public HttpResponse View(object viewModel=null,[CallerMemberName]string viewPath=null)
+         public HttpRequest Request { get; set; }
+        protected HttpResponse View(object viewModel=null,[CallerMemberName]string viewPath=null)
         {
-            var layout = System.IO.File.ReadAllText("Views/Shared/_Layout.cshtml");
-            layout = layout.Replace("@RenderBody()", "__VIEW____GOES___HERE__");
-            layout = this.viewEngine.GetHtml(layout, viewModel,null);
             var viewContent = System.IO.File.ReadAllText(
-                "Views/" + 
-                this.GetType().Name.Replace("Controller",string.Empty)+ 
-                "/"+
-                viewPath +
-                ".cshtml");
-
+               "Views/" +
+               this.GetType().Name.Replace("Controller", string.Empty) +
+               "/" + viewPath + ".cshtml");
             viewContent = this.viewEngine.GetHtml(viewContent, viewModel, null);
-            var responseHtml = layout.Replace("__VIEW____GOES___HERE__", viewContent);
+
+            var responseHtml = this.PutViewInLayout(viewContent, viewModel);
+
             var responseBodyBytes = Encoding.UTF8.GetBytes(responseHtml);
             var response = new HttpResponse("text/html", responseBodyBytes);
             return response;
 
         }
 
-        public HttpResponse File(string filePath,string contentType)
+        protected HttpResponse File(string filePath,string contentType)
         {
             var fileBytes = System.IO.File.ReadAllBytes(filePath);
             var response = new HttpResponse(contentType, fileBytes);
@@ -43,12 +41,51 @@ namespace SIS.MvcFramework
 
         }
 
-        public HttpResponse Redirect(string url)
+        protected HttpResponse Redirect(string url)
         {
             var response = new HttpResponse(HttpStatusCode.Found);
             response.Headers.Add(new Header("Location",url));
 
             return response;
         }
+
+        protected HttpResponse Error(string errorText)
+        {
+            var viewContent = $"<div class=\"alert alert-danger\" role=\"alert\">{errorText}</div>";
+            var responseHtml = this.PutViewInLayout(viewContent);
+            var responseBodyBytes = Encoding.UTF8.GetBytes(responseHtml);
+            var response = new HttpResponse("text/html", responseBodyBytes, HttpStatusCode.ServerError);
+            return response;
+        }
+
+        protected void SignIn(string userId)
+        {
+            this.Request.Session[UserIdSessionName] = userId;
+        }
+
+        protected void SignOut() 
+        {
+            this.Request.Session[UserIdSessionName] = null;
+        }
+
+        protected bool IsUserSignedIn() =>
+             this.Request.Session.ContainsKey(UserIdSessionName) &&
+             this.Request.Session[UserIdSessionName] != null;
+
+        protected string GetUserId() =>
+            this.Request.Session.ContainsKey(UserIdSessionName) ?
+            this.Request.Session[UserIdSessionName] : null;
+
+
+        private string PutViewInLayout(string viewContent, object viewModel = null)
+        {
+            var layout = System.IO.File.ReadAllText("Views/Shared/_Layout.cshtml");
+            layout = layout.Replace("@RenderBody()", "____VIEW_GOES_HERE____");
+            layout = this.viewEngine.GetHtml(layout, viewModel, null);
+            var responseHtml = layout.Replace("____VIEW_GOES_HERE____", viewContent);
+            return responseHtml;
+        }
+
+        
     }
 }

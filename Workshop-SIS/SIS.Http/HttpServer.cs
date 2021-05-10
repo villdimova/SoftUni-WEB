@@ -60,53 +60,53 @@ namespace SIS.Http
                             data.AddRange(buffer);
                         }
 
-
-                        if (count == 0)
-                        {
-                            break;
-                        }
                     }
 
-                    //byte[]=>string(text) --- Encoding
+                  
 
                     var requestAsString = Encoding.UTF8.GetString(data.ToArray());
                     var request = new HttpRequest(requestAsString);
                     Console.WriteLine($"{ request.Method} { request.Path} => {request.Headers.Count} headers");
 
                     HttpResponse response;
-                    var route = routeTable.FirstOrDefault(x =>string.Compare( x.Path,request.Path,true)==0
-                    &&x.Method==request.Method);
-                    if (route!=null)
+                    var route = this.routeTable.FirstOrDefault(
+                        x => string.Compare(x.Path, request.Path, true) == 0
+                            && x.Method == request.Method);
+                    if (route != null)
                     {
-                        
                         response = route.Action(request);
                     }
                     else
                     {
+                      
                         response = new HttpResponse("text/html", new byte[0], HttpStatusCode.NotFound);
                     }
 
-                    response.Cookies.Add(new ResponseCookie("sid", Guid.NewGuid().ToString())
-                    { HttpOnly = true, MaxAge = 60 * 24 * 60 * 60 });
-                    response.Headers.Add(new Header("Server", "SUS Server 1.0"));
+                    response.Headers.Add(new Header("Server", "SIS Server 1.0"));
+                   
+                    var sessionCookie = request.Cookies.FirstOrDefault(x => x.Name == HttpConstants.SessionCookieName);
+                    if (sessionCookie != null)
+                    {
+                        var responseSessionCookie = new ResponseCookie(sessionCookie.Name, sessionCookie.Value);
+                        responseSessionCookie.Path = "/";
+                        response.Cookies.Add(responseSessionCookie);
+                    }
+
                     var responseHeaderBytes = Encoding.UTF8.GetBytes(response.ToString());
                     await stream.WriteAsync(responseHeaderBytes, 0, responseHeaderBytes.Length);
-                    await stream.WriteAsync(response.Body, 0, response.Body.Length);
 
-                    tcpClient.Close();
-
-
+                    if (response.Body != null)
+                    {
+                        await stream.WriteAsync(response.Body, 0, response.Body.Length);
+                    }
                 }
+
+                tcpClient.Close();
             }
             catch (Exception ex)
             {
-
-                Console.WriteLine(ex); 
+                Console.WriteLine(ex);
             }
-            
-           
-           
-           
         }
     }
 }

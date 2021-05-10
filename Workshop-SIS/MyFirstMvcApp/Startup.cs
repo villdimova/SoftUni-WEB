@@ -1,4 +1,6 @@
-﻿using MyFirstMvcApp.Controllers;
+﻿using Microsoft.EntityFrameworkCore;
+using MyFirstMvcApp.Controllers;
+using MyFirstMvcApp.Data;
 using SIS.Http;
 using SIS.MvcFramework;
 using System.Collections.Generic;
@@ -15,7 +17,7 @@ namespace MyFirstMvcApp
 
         public void Configure(List<Route> routeTable)
         {
-         
+            new ApplicationDbContext().Database.Migrate();
         }
     }
 }
