@@ -14,22 +14,21 @@ namespace SIS.Http
     public class HttpServer : IHttpServer
     {
 
-       List<Route> routeTable ;
+        List<Route> routeTable;
 
         public HttpServer(List<Route> routeTable)
         {
             this.routeTable = routeTable;
         }
-       
 
         public async Task StartAsync(int port)
         {
-            TcpListener tcpListener = new TcpListener(IPAddress.Loopback,port);
+            TcpListener tcpListener =
+                new TcpListener(IPAddress.Loopback, port);
             tcpListener.Start();
             while (true)
             {
-               TcpClient tcpClient= await tcpListener.AcceptTcpClientAsync();
-
+                TcpClient tcpClient = await tcpListener.AcceptTcpClientAsync();
                 ProcessClientAsync(tcpClient);
             }
         }
@@ -40,12 +39,14 @@ namespace SIS.Http
             {
                 using (NetworkStream stream = tcpClient.GetStream())
                 {
+                    // TODO: research if there is faster data structure for array of bytes
                     List<byte> data = new List<byte>();
                     int position = 0;
-                    byte[] buffer = new byte[HttpConstants.BufferSize];
+                    byte[] buffer = new byte[HttpConstants.BufferSize]; // chunk
                     while (true)
                     {
-                        int count = await stream.ReadAsync(buffer, position, buffer.Length);
+                        int count =
+                            await stream.ReadAsync(buffer, position, buffer.Length);
                         position += count;
 
                         if (count < buffer.Length)
@@ -59,14 +60,12 @@ namespace SIS.Http
                         {
                             data.AddRange(buffer);
                         }
-
                     }
 
-                  
-
+                    // byte[] => string (text)
                     var requestAsString = Encoding.UTF8.GetString(data.ToArray());
                     var request = new HttpRequest(requestAsString);
-                    Console.WriteLine($"{ request.Method} { request.Path} => {request.Headers.Count} headers");
+                    Console.WriteLine($"{request.Method} {request.Path} => {request.Headers.Count} headers");
 
                     HttpResponse response;
                     var route = this.routeTable.FirstOrDefault(
@@ -78,12 +77,12 @@ namespace SIS.Http
                     }
                     else
                     {
-                      
+                        // Not Found 404
                         response = new HttpResponse("text/html", new byte[0], HttpStatusCode.NotFound);
                     }
 
                     response.Headers.Add(new Header("Server", "SIS Server 1.0"));
-                   
+
                     var sessionCookie = request.Cookies.FirstOrDefault(x => x.Name == HttpConstants.SessionCookieName);
                     if (sessionCookie != null)
                     {

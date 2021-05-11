@@ -23,7 +23,7 @@ namespace SIS.MvcFramework
                "Views/" +
                this.GetType().Name.Replace("Controller", string.Empty) +
                "/" + viewPath + ".cshtml");
-            viewContent = this.viewEngine.GetHtml(viewContent, viewModel, null);
+            viewContent = this.viewEngine.GetHtml(viewContent, viewModel, this.GetUserId());
 
             var responseHtml = this.PutViewInLayout(viewContent, viewModel);
 
@@ -81,7 +81,7 @@ namespace SIS.MvcFramework
         {
             var layout = System.IO.File.ReadAllText("Views/Shared/_Layout.cshtml");
             layout = layout.Replace("@RenderBody()", "____VIEW_GOES_HERE____");
-            layout = this.viewEngine.GetHtml(layout, viewModel, null);
+            layout = this.viewEngine.GetHtml(layout, viewModel, this.GetUserId());
             var responseHtml = layout.Replace("____VIEW_GOES_HERE____", viewContent);
             return responseHtml;
         }
