@@ -67,13 +67,11 @@ namespace MyWebServer.Server.Http
                     throw new InvalidOperationException("Request is not valid.");
                 }
 
-                var header = new HttpHeader
-                {
-                    Name = headerParts[0],
-                    Value = headerParts[1].Trim()
-                };
-
-                headerCollection.Add(header);
+                var headerName = headerParts[0];
+                var headerValue = headerParts[1].Trim();
+                var header = new HttpHeader(headerName, headerValue);
+               
+                headerCollection.Add(headerName,headerValue);
             }
 
             return headerCollection;
