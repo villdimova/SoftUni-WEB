@@ -21,7 +21,19 @@ namespace MyWebServer.Server.Routing
             [HttpMethod.Delete] = new (),
 
         };
-        
+
+        public IRoutingTable Map(
+            HttpMethod method,
+            string path,
+            HttpResponse response)
+        {
+            Guard.AgainstNull(path, nameof(path));
+            Guard.AgainstNull(response, nameof(response));
+
+            this.routes[method][path] = response;
+
+            return this;
+        }
         public IRoutingTable Map(
             string url,
             HttpMethod method,
@@ -31,32 +43,30 @@ namespace MyWebServer.Server.Routing
                 HttpMethod.Get => this.MapGet(url, response),
                 _ => throw new InvalidOperationException($"Method '{method}' is not supported."),
             };
-        
+
 
         public IRoutingTable MapGet(
-            string url,
+            string path,
             HttpResponse response)
-        {
-            Guard.AgainstNull(url,nameof(url));
-            Guard.AgainstNull(response,nameof(response));
+            => Map(HttpMethod.Get, path, response);
 
-            this.routes[HttpMethod.Get][url] = response;
-
-            return this;
-        }
+        public IRoutingTable MapPost(
+           string path,
+           HttpResponse response)
+           => Map(HttpMethod.Post, path, response);
 
         public HttpResponse MatchRequest(HttpRequest request)
         {
             var requestMethod = request.Method;
-            var requestUrl = request.Url;
+            var requestPath = request.Path;
 
             if (!this.routes.ContainsKey(requestMethod)
-                || !this.routes[requestMethod].ContainsKey(requestUrl))
+                || !this.routes[requestMethod].ContainsKey(requestPath))
             {
                 return new NotFoundResponse();
             }
 
-            return this.routes[requestMethod][requestUrl];
+            return this.routes[requestMethod][requestPath];
         }
     }
 }
