@@ -33,7 +33,7 @@
             Guard.AgainstNull(path, nameof(path));
             Guard.AgainstNull(responseFunction, nameof(responseFunction));
 
-            this.routes[method][path] = responseFunction;
+            this.routes[method][path.ToLower()] = responseFunction;
 
             return this;
         }
@@ -67,7 +67,7 @@
         public HttpResponse ExecuteRequest(HttpRequest request)
         {
             var requestMethod = request.Method;
-            var requestPath = request.Path;
+            var requestPath = request.Path.ToLower();
 
             if (!this.routes.ContainsKey(requestMethod)
                 || !this.routes[requestMethod].ContainsKey(requestPath))
