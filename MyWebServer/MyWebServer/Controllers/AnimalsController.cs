@@ -1,30 +1,44 @@
 ﻿namespace MyWebServer.Controllers
 {
-    using MyWebServer.Server;
+    using MyWebServer.Models.Animals;
     using MyWebServer.Server.Controllers;
     using MyWebServer.Server.Http;
-    using MyWebServer.Server.Responses;
-
+   
     public class AnimalsController: Controller
     {
-        public AnimalsController(HttpRequest request) : base(request)
+        public AnimalsController(HttpRequest request)
+              : base(request)
         {
         }
 
         public HttpResponse Cats()
         {
+            const string nameKey = "Name";
+            const string ageKey = "Age";
+
             var query = this.Request.Query;
 
-            var catName = query.ContainsKey("Name")
-                    ? query["Name"]
-                    : "the cats";
+            var catName = query.ContainsKey(nameKey)
+                ? query[nameKey]
+                : "the cats";
 
-            var result = $"<h1>Hello from {catName}!</h1>";
+            var catAge = query.ContainsKey(ageKey)
+                ? int.Parse(query[ageKey])
+                : 0;
 
-            return Html(result);
+            var viewModel = new CatViewModel
+            {
+                Name = catName,
+                Age = catAge
+            };
+
+            return View(viewModel);
         }
 
-        public HttpResponse Dogs()
-            => Html("<h1>Hello from the dogs!</h1>");
+        public HttpResponse Dogs() => View();
+
+        public HttpResponse Bunnies() => View("Rabbits");
+
+        public HttpResponse Turtles() => View("Animals/Wild/Turtles");
     }
 }

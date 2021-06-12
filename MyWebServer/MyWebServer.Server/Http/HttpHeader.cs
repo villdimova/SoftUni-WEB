@@ -4,6 +4,15 @@ namespace MyWebServer.Server.Http
 {
     public class HttpHeader
     {
+        public const string ContentType = "Content-Type";
+        public const string ContentLength = "Content-Length";
+        public const string Cookie = "Cookie";
+        public const string Date = "Date";
+        public const string Location = "Location";
+        public const string Server = "Server";
+        public const string SetCookie = "Set-Cookie";
+     
+
         public HttpHeader(string name, string value)
         {
             Guard.AgainstNull(name,nameof(name));
@@ -17,9 +26,8 @@ namespace MyWebServer.Server.Http
         public string Value { get; init; }
 
         public override string ToString()
-        {
-            return $"{this.Name}: {this.Value}";
-        }
+        => $"{this.Name}: {this.Value}";
+     
 
     }
 }
