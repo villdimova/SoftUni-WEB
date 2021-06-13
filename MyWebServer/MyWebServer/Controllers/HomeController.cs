@@ -4,6 +4,7 @@
     using MyWebServer.Server.Controllers;
     using MyWebServer.Server.Http;
     using MyWebServer.Server.Results;
+    using System;
 
     public  class HomeController: Controller
     {
@@ -19,6 +20,6 @@
 
         public HttpResponse ToGoogle() => Redirect("https://www.google.bg");
 
-
+        public HttpResponse Error() => throw new InvalidOperationException("Invalid action!");
     }
 }
