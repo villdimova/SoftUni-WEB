@@ -7,8 +7,7 @@ namespace MyWebServer.Server.Http
     public class HttpRequest
     {
       
-        private static Dictionary<string,HttpSession> Sessions
-            =>new();
+        private static Dictionary<string,HttpSession> Sessions =new();
         private const string NewLine = "\r\n";
         public HttpMethod Method { get; private set; }
 
@@ -120,7 +119,7 @@ namespace MyWebServer.Server.Http
 
         private static Dictionary<string,HttpCookie> ParseCookies(Dictionary<string, HttpHeader> headers)
         {
-            var cookieCollection = new Dictionary<string, HttpCookie>();
+            var cookieCollection = new Dictionary<string, HttpCookie>(StringComparer.InvariantCultureIgnoreCase);
 
             if (headers.ContainsKey(HttpHeader.Cookie))
             {
@@ -136,8 +135,8 @@ namespace MyWebServer.Server.Http
 
                     var cookie = new HttpCookie(cookieName, cookieValue);
 
-                    cookieCollection.Add(cookieName, cookie);
-                  
+                    cookieCollection[cookieName] = cookie;
+
                 }
             }
 
@@ -147,12 +146,15 @@ namespace MyWebServer.Server.Http
         private static HttpSession GetSession(Dictionary<string, HttpCookie> cookies)
         {
             var sessionId = cookies.ContainsKey(HttpSession.SessionCookieName)
-                  ? cookies[HttpSession.SessionCookieName].Value
-                  : Guid.NewGuid().ToString();
+                ? cookies[HttpSession.SessionCookieName].Value
+                : Guid.NewGuid().ToString();
 
             if (!Sessions.ContainsKey(sessionId))
             {
-                Sessions[sessionId] = new HttpSession(sessionId);
+                Sessions[sessionId] = new HttpSession(sessionId)
+                {
+                    IsNew = true
+                };
             }
 
             return Sessions[sessionId];
