@@ -33,11 +33,6 @@
             Guard.AgainstNull(path, nameof(path));
             Guard.AgainstNull(responseFunction, nameof(responseFunction));
 
-            if (this.routes.ContainsKey(method) && this.routes[method].ContainsKey(path.ToLower()))
-            {
-                throw new InvalidOperationException($"Route '{method.ToString().ToUpper()} {path}' already exists. Multiple routes with the same method and path are not supported.");
-            }
-
             this.routes[method][path.ToLower()] = responseFunction;
 
             return this;
@@ -79,12 +74,6 @@
         {
             var currentDirectory = Directory.GetCurrentDirectory();
             var staticFilesFolder = Path.Combine(currentDirectory, folder);
-
-            if (!Directory.Exists(staticFilesFolder))
-            {
-                return this;
-            }
-
             var staticFiles = Directory.GetFiles(
                 staticFilesFolder,
                 "*.*",

@@ -2,10 +2,11 @@
 {
     using MyWebServer.Http;
 
-    public class BadRequestResult : ActionResult
+    public class BadRequestResult : HttpResponse
     {
-        public BadRequestResult(HttpResponse response) 
-            : base(response)
-            => this.StatusCode = HttpStatusCode.BadRequest;
+        public BadRequestResult() 
+            : base(HttpStatusCode.BadRequest)
+        {
+        }
     }
 }
