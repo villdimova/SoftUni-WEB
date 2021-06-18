@@ -7,6 +7,7 @@
     using System.Threading.Tasks;
     using MyWebServer.Http;
     using MyWebServer.Routing;
+    using MyWebServer.Services;
 
     public class HttpServer
     {
@@ -15,25 +16,61 @@
         private readonly TcpListener listener;
 
         private readonly RoutingTable routingTable;
+        private readonly ServiceCollection serviceCollection;
 
-        public HttpServer(string ipAddress, int port, Action<IRoutingTable> routingTableConfiguration)
+        private HttpServer(string ipAddress, int port, IRoutingTable routingTable)
         {
             this.ipAddress = IPAddress.Parse(ipAddress);
             this.port = port;
 
             listener = new TcpListener(this.ipAddress, port);
 
-            routingTableConfiguration(this.routingTable = new RoutingTable());
+            this.routingTable = (RoutingTable)routingTable;
+
+            this.serviceCollection = new ServiceCollection();
         }
 
-        public HttpServer(int port, Action<IRoutingTable> routingTable)
+        private HttpServer(int port, IRoutingTable routingTable)
             : this("127.0.0.1", port, routingTable)
         {
         }
 
-        public HttpServer(Action<IRoutingTable> routingTable)
+        private HttpServer(IRoutingTable routingTable)
             : this(5000, routingTable)
         {
+        }
+
+        public static HttpServer WithRoutes(Action<IRoutingTable> routingTableConfiguration)
+        {
+            var routingTable = new RoutingTable();
+
+            routingTableConfiguration(routingTable);
+
+            var httpServer = new HttpServer(routingTable);
+
+            return httpServer;
+        }
+
+        public HttpServer WithServices(Action<IServiceCollection> serviceCollectionConfiguration)
+        {
+            serviceCollectionConfiguration(this.serviceCollection);
+
+            return this;
+        }
+
+        public HttpServer WithConfiguration<TService>(Action<TService> configuration)
+            where TService : class
+        {
+            var service = this.serviceCollection.Get<TService>();
+
+            if (service == null)
+            {
+                throw new InvalidOperationException($"Service '{typeof(TService).FullName}' is not registered.");
+            }
+
+            configuration(service);
+
+            return this;
         }
 
         public async Task Start()
@@ -55,7 +92,7 @@
 
                     try
                     {
-                        var request = HttpRequest.Parse(requestText);
+                        var request = HttpRequest.Parse(requestText, this.serviceCollection);
 
                         var response = this.routingTable.ExecuteRequest(request);
 
@@ -106,7 +143,8 @@
         {
             if (request.Session.IsNew)
             {
-                response.AddCookie(HttpSession.SessionCookieName, request.Session.Id);
+                response.Cookies.Add(HttpSession.SessionCookieName, request.Session.Id);
+                
                 request.Session.IsNew = false;
             }
         }
