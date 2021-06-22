@@ -82,11 +82,11 @@ namespace Git.Controllers
         public HttpResponse Delete(string id)
         {
             var commit = this.data.Commits
-                .FirstOrDefault(c => c.Id == id);
+                .FirstOrDefault(c => c.Id == id && c.CreatorId==this.User.Id);
 
             if (commit==null)
             {
-                return Error("The commit does nor exist.");
+                return BadRequest();
             }
 
             this.data.Commits.Remove(commit);
