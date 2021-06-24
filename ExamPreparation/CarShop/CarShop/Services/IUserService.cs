@@ -9,5 +9,6 @@ namespace CarShop.Services
    public interface IUserService
     {
         bool IsMechanic(string userId);
+        bool IsCarOwner(string carId, string userId);
     }
 }

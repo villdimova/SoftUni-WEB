@@ -32,7 +32,7 @@ namespace CarShop.Controllers
         [HttpPost]
         public HttpResponse Register(RegisterUserViewModel input)
         {
-            var modelErrors = validator.ValidateUserRegistration(input);
+            var modelErrors = validator.ValidateUser(input);
 
             if (this.carshopDbContext.Users.Any(u=>u.Username==input.Username))
             {

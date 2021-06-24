@@ -41,7 +41,7 @@
             {
                 return Unauthorized();
             }
-            var errors = validator.ValidateAddCars(input);
+            var errors = validator.ValidateCar(input);
 
             if (errors.Any())
             {

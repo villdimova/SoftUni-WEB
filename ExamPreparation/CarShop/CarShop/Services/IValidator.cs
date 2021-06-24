@@ -9,12 +9,12 @@ using System.Threading.Tasks;
 
 namespace CarShop.Services
 {
-   public interface IValidator
+    public interface IValidator
     {
-        ICollection<string> ValidateUserRegistration(RegisterUserViewModel model);
+        ICollection<string> ValidateUser(RegisterUserViewModel model);
 
-        ICollection<string> ValidateAddCars(AddCarViewModel model);
+        ICollection<string> ValidateCar(AddCarViewModel model);
 
-        ICollection<string> ValidateAddIssue(AddIssueViewModel model);
+        ICollection<string> ValidateIssue(AddIssueViewModel model);
     }
 }

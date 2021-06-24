@@ -68,11 +68,20 @@ namespace CarShop.Controllers
         [HttpPost]
         public HttpResponse Add(string carId, AddIssueViewModel input)
         {
-            var errors = this.validator.ValidateAddIssue(input);
+            var errors = this.validator.ValidateIssue(input);
 
             if (errors.Any())
             {
                 return View("./Error", errors);
+            }
+
+            if (!this.userService.IsMechanic(this.User.Id))
+            {
+                return Unauthorized();
+            }
+            if (userService.IsCarOwner(carId,this.User.Id))
+            {
+                return Unauthorized();
             }
             var issue = new Issue
             {

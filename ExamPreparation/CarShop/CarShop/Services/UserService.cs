@@ -15,6 +15,20 @@ namespace CarShop.Services
         {
             this.carshopDbContext = carshopDbContext;
         }
+
+        public bool IsCarOwner(string carId, string userId)
+        {
+            var car = this.carshopDbContext.Cars
+                            .FirstOrDefault(c => c.Id == carId);
+
+            if (car.OwnerId!=userId)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         public bool IsMechanic(string userId)
         {
             var currentUser = carshopDbContext.Users.FirstOrDefault(u => u.Id == userId);

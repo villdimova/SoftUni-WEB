@@ -1,77 +1,98 @@
-﻿using CarShop.ViewModels.Cars;
-using CarShop.ViewModels.Issues;
-using CarShop.ViewModels.Users;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-
-namespace CarShop.Services
+﻿namespace CarShop.Services
 {
+    using CarShop.ViewModels.Cars;
+    using CarShop.ViewModels.Issues;
+    using CarShop.ViewModels.Users;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text.RegularExpressions;
+
+    using static Data.DataConstants;
+
+
     public class Validator : IValidator
     {
-        public ICollection<string> ValidateAddCars(AddCarViewModel model)
+        public ICollection<string> ValidateCar(AddCarViewModel model)
         {
-           var errors= new List<string>();
-            var currentYear = int.Parse(DateTime.UtcNow.Year.ToString());
+            var errors = new List<string>();
 
-            if (model.Model.Length < 5 || model.Model.Length > 20)
+            if (model.Model == null || model.Model.Length < CarModelMinLength || model.Model.Length > DefaultMaxLength)
             {
-                errors.Add("Model must be between 5 and 20 symbols");
+                errors.Add($"Model '{model.Model}' is not valid. It must be between {CarModelMinLength} and {DefaultMaxLength} characters long.");
             }
 
-            if (model.Year<1950 || model.Year>currentYear)
+            if (model.Year < CarYearMinValue || model.Year > CarYearMaxValue)
             {
-                errors.Add("The written year is not valid.");
+                errors.Add($"Year '{model.Year}' is not valid. It must be between {CarYearMinValue} and {CarYearMaxValue}.");
             }
 
-            if (!Regex.IsMatch(model.PlateNumber, @"^[A-Z]{1}[\d]{4}[A-Z]{2}$"))
+            if (model.Image == null || !Uri.IsWellFormedUriString(model.Image, UriKind.Absolute))
             {
-                errors.Add("The written Plate Number is not valid.");
+                errors.Add($"Image '{model.Image}' is not valid. It must be a valid URL.");
+            }
+
+            if (model.PlateNumber == null || !Regex.IsMatch(model.PlateNumber, CarPlateNumberRegularExpression))
+            {
+                errors.Add($"Plate number '{model.PlateNumber}' is not valid. It should be in 'XX0000XX' format.");
             }
 
             return errors;
         }
 
-        public ICollection<string> ValidateAddIssue(AddIssueViewModel model)
+        public ICollection<string> ValidateIssue(AddIssueViewModel model)
         {
             var errors = new List<string>();
 
-            if (model.Description.Length < 5)
+            if (model.CarId == null)
             {
-                errors.Add($"The issue description hat to contain minimus 5 symbols");
+                errors.Add($"Car ID cannot be empty.");
+            }
+
+            if (model.Description.Length < IssueMinDescription)
+            {
+                errors.Add($"Description '{model.Description}' is not valid. It must have more than {IssueMinDescription} characters.");
             }
 
             return errors;
         }
 
-        public ICollection<string> ValidateUserRegistration(RegisterUserViewModel model)
+        public ICollection<string> ValidateUser(RegisterUserViewModel model)
         {
             var errors = new List<string>();
-            if (model.Username.Length < 4 || model.Username.Length > 20)
+
+            if (model.Username == null || model.Username.Length < UserMinUsername || model.Username.Length > DefaultMaxLength)
             {
-                errors.Add("Username must be between 4 and 20 symbols");
+                errors.Add($"Username '{model.Username}' is not valid. It must be between {UserMinUsername} and {DefaultMaxLength} characters long.");
             }
 
-            if (model.Password.Length < 5 || model.Password.Length > 20)
+            if (model.Email == null || !Regex.IsMatch(model.Email, UserEmailRegularExpression))
             {
-                errors.Add("Password must be between 5 and 20 symbols");
+                errors.Add($"Email '{model.Email}' is not a valid e-mail address.");
+            }
+
+            if (model.Password == null || model.Password.Length < UserMinPassword || model.Password.Length > DefaultMaxLength)
+            {
+                errors.Add($"The provided password is not valid. It must be between {UserMinPassword} and {DefaultMaxLength} characters long.");
+            }
+
+            if (model.Password != null && model.Password.Any(x => x == ' '))
+            {
+                errors.Add($"The provided password cannot contain whitespaces.");
             }
 
             if (model.Password != model.ConfirmPassword)
             {
-                errors.Add("Password and ConfirmPassword didn't match.");
+                errors.Add("Password and its confirmation are different.");
             }
 
-            if (model.UserType != "Mechanic" && model.UserType != "Client")
+            if (model.UserType != UserTypeClient && model.UserType != UserTypeMechanic)
             {
-                errors.Add("UserType has to be Mechanic or Client.");
+                errors.Add($"The user can be either a '{UserTypeClient}' or a '{UserTypeMechanic}'.");
             }
+
             return errors;
         }
        
-        
     }
 }
